@@ -36,10 +36,10 @@ def predict():
         # ---------- MODEL INPUT ----------
         input_data = np.array([[total_time, session_count, micro_ratio, late_night_ratio, sessions_per_hour]])
 
-        # ---------- MODEL PREDICTION ----------
-        prediction = model.predict(input_data)[0]
+        # ---------- MODEL PREDICTION (FOR ANALYSIS ONLY) ----------
+        model_pred = int(model.predict(input_data)[0])
 
-        # ---------- BEHAVIOR RISK SCORE ----------
+        # ---------- RISK SCORE ----------
         risk_score = (
             total_time +
             session_count +
@@ -48,53 +48,87 @@ def predict():
             sessions_per_hour
         ) / 5
 
-        # ---------- FINAL CLASSIFICATION ----------
-        if prediction == 1:
-            final_result = "Addicted"
-        else:
-            if risk_score >= 0.5:
-                final_result = "Mildly Addicted"
-            else:
-                final_result = "Not Addicted"
+        risk_score = round(risk_score, 2)
 
-        # ---------- SUGGESTIONS ----------
+        # ---------- FINAL CLASSIFICATION (PURE LOGIC) ----------
+        if risk_score < 0.5:
+            final_result = "Not Addicted"
+
+        elif 0.5 <= risk_score < 0.75:
+            final_result = "Mildly Addicted"
+
+        else:
+            final_result = "Addicted"
+
+        # ---------- SMART SUGGESTIONS ----------
         suggestions = []
 
+        # 🔴 ADDICTED
         if final_result == "Addicted":
+            suggestions.append("Your usage pattern indicates high dependency on your phone.")
+
             if total_time > 0.7:
-                suggestions.append("Reduce your overall screen time gradually.")
+                suggestions.append("Gradually reduce your daily screen time by setting usage limits.")
 
             if session_count > 0.7:
-                suggestions.append("Avoid frequent phone checking. Try scheduled usage.")
+                suggestions.append("Avoid frequent phone checking. Try fixed intervals instead.")
 
             if micro_ratio > 0.6:
-                suggestions.append("Limit short impulsive phone checks. Disable unnecessary notifications.")
+                suggestions.append("Disable unnecessary notifications to reduce impulsive checking.")
 
             if late_night_ratio > 0.5:
-                suggestions.append("Avoid using your phone late at night to improve sleep.")
+                suggestions.append("Avoid late-night phone usage to improve sleep quality.")
 
             if sessions_per_hour > 0.7:
-                suggestions.append("Increase focus time by keeping your phone away during work or study.")
+                suggestions.append("Keep your phone away during work/study to improve focus.")
 
+            suggestions.append("Consider digital detox routines like no-phone hours.")
+
+        # 🟡 MILDLY ADDICTED
         elif final_result == "Mildly Addicted":
-            suggestions = [
-                "You show some signs of excessive phone usage.",
-                "Try reducing screen time gradually.",
-                "Avoid frequent checking habits.",
-                "Maintain better sleep habits by limiting night usage."
-            ]
+            suggestions.append("Your usage shows early signs of dependency.")
 
+            if total_time > 0.5:
+                suggestions.append("Try reducing your screen time gradually.")
+
+            if session_count > 0.5:
+                suggestions.append("Reduce how often you check your phone.")
+
+            if micro_ratio > 0.4:
+                suggestions.append("Limit short, impulsive phone usage.")
+
+            if late_night_ratio > 0.3:
+                suggestions.append("Avoid using your phone late at night.")
+
+            if sessions_per_hour > 0.5:
+                suggestions.append("Improve focus by minimizing interruptions.")
+
+            suggestions.append("Build healthier digital habits before it worsens.")
+
+        # 🟢 NOT ADDICTED
         else:
-            suggestions = [
-                "Great job maintaining healthy phone usage!",
-                "Continue your balanced usage habits.",
-                "Avoid increasing late-night usage."
-            ]
+            suggestions.append("Great job! Your phone usage is under control.")
+
+            if total_time > 0.4:
+                suggestions.append("Try to keep your screen time within healthy limits.")
+
+            if session_count > 0.4:
+                suggestions.append("Avoid increasing phone checking frequency.")
+
+            if micro_ratio > 0.4:
+                suggestions.append("Reduce unnecessary quick checks.")
+
+            if late_night_ratio > 0.2:
+                suggestions.append("Maintain good sleep habits by limiting night usage.")
+
+            if sessions_per_hour > 0.4:
+                suggestions.append("Stay focused and avoid distractions.")
 
         # ---------- RESPONSE ----------
         return jsonify({
             "prediction": final_result,
-            "risk_score": round(risk_score, 2),
+            "risk_score": risk_score,
+            "model_prediction": model_pred,
             "suggestions": suggestions
         })
 
